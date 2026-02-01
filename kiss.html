@@ -8,73 +8,165 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
 <style>
-body{margin:0;background:#000;height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial}
-#wrap{position:relative;width:900px;height:500px}
-video{position:absolute;left:0;width:450px;height:500px;object-fit:cover;transform:scaleX(-1)}
-#me{position:absolute;right:0;width:450px;height:500px;object-fit:cover}
-#kiss{position:absolute;font-size:56px;display:none;filter:drop-shadow(0 0 14px hotpink)}
-#hint{position:absolute;top:-40px;width:100%;text-align:center;color:#fff}
-#overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);display:none;
-align-items:center;justify-content:center;color:#fff;font-size:28px}
-button{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
-padding:10px 30px;border:0;border-radius:30px;background:#ff2e63;color:#fff;font-size:18px}
+body{
+  margin:0;
+  background:#000;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-family:Arial;
+}
+#wrap{
+  position:relative;
+  width:900px;
+  height:500px;
+}
+video{
+  position:absolute;
+  left:0;
+  width:450px;
+  height:500px;
+  object-fit:cover;
+  transform:scaleX(-1);
+}
+#me{
+  position:absolute;
+  right:0;
+  width:450px;
+  height:500px;
+  object-fit:cover;
+}
+#kiss{
+  position:absolute;
+  font-size:56px;
+  display:none;
+  filter:drop-shadow(0 0 14px hotpink);
+}
+#hint{
+  position:absolute;
+  top:-40px;
+  width:100%;
+  text-align:center;
+  color:#fff;
+}
+#overlay{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.75);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  font-size:28px;
+}
+button{
+  position:absolute;
+  bottom:10px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:10px 30px;
+  border:0;
+  border-radius:30px;
+  background:#ff2e63;
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
+
 <div id="wrap">
   <div id="hint">Give a kiss 💋 and close your eyes for 10 seconds</div>
+
   <video id="v" autoplay muted playsinline></video>
+
+  <!-- 👉 Teri photo -->
   <img id="me" src="myphoto.jpg">
+
+  <!-- 💋 static kiss -->
   <div id="kiss">💋</div>
+
+  <!-- countdown overlay -->
   <div id="overlay">Keep eyes closed… <span id="c">10</span></div>
+
   <button onclick="doKiss()">KISS 😘</button>
 </div>
 
 <script>
-/*** 👉👉 APNA WHATSAPP NUMBER YAHAN DAALO (country code ke saath) ***/
-const WA_NUMBER = "91XXXXXXXXXX"; // example: 919876543210
+/*** ✅ TERA WHATSAPP NUMBER (country code ke saath) ***/
+const WA_NUMBER = "918797117728";
 
-const v=document.getElementById('v'), kiss=document.getElementById('kiss'),
-ov=document.getElementById('overlay'), c=document.getElementById('c');
-let lipX=700, lipY=250;
+const v = document.getElementById('v');
+const kiss = document.getElementById('kiss');
+const ov = document.getElementById('overlay');
+const c  = document.getElementById('c');
 
-// camera
-navigator.mediaDevices.getUserMedia({video:true}).then(s=>v.srcObject=s);
+let lipX = 700, lipY = 250;
 
-// FaceMesh (lips)
-const fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
-fm.setOptions({maxNumFaces:1,refineLandmarks:true});
-fm.onResults(r=>{
-  if(!r.multiFaceLandmarks) return;
-  const f=r.multiFaceLandmarks[0], u=f[13], l=f[14];
-  // RIGHT image area (my photo side)
-  lipX=((u.x+l.x)/2)*450+450;
-  lipY=((u.y+l.y)/2)*500;
+/* Camera ON */
+navigator.mediaDevices.getUserMedia({ video:true })
+  .then(stream => v.srcObject = stream);
+
+/* MediaPipe FaceMesh (lips detection) */
+const fm = new FaceMesh({
+  locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
 });
-const cam=new Camera(v,{onFrame:async()=>fm.send({image:v}),width:450,height:500});
+fm.setOptions({
+  maxNumFaces:1,
+  refineLandmarks:true
+});
+
+fm.onResults(res => {
+  if(!res.multiFaceLandmarks) return;
+  const face = res.multiFaceLandmarks[0];
+  const upper = face[13];
+  const lower = face[14];
+
+  /* RIGHT side photo lips position */
+  lipX = ((upper.x + lower.x) / 2) * 450 + 450;
+  lipY = ((upper.y + lower.y) / 2) * 500;
+});
+
+const cam = new Camera(v,{
+  onFrame: async () => await fm.send({ image:v }),
+  width:450,
+  height:500
+});
 cam.start();
 
+/* Kiss action */
 function doKiss(){
-  // 💋 static on lips (no movement)
-  kiss.style.left=lipX+'px';
-  kiss.style.top =lipY+'px';
-  kiss.style.display='block';
+  /* 💋 static lips pe */
+  kiss.style.left = lipX + "px";
+  kiss.style.top  = lipY + "px";
+  kiss.style.display = "block";
 
-  // 10s eyes-closed illusion
-  ov.style.display='flex';
-  let t=10; c.textContent=t;
-  const id=setInterval(()=>{
-    t--; c.textContent=t;
-    if(t<=0){
-      clearInterval(id);
-      // Auto-open WhatsApp app (mobile)
-      location.href = `whatsapp://call?phone=${8797117728}`;
-      // Fallback to web (if app scheme fails)
-      setTimeout(()=>{ location.href = `https://wa.me/${WA_NUMBER}`; }, 800);
+  /* 10 sec eyes-closed illusion */
+  ov.style.display = "flex";
+  let t = 10;
+  c.textContent = t;
+
+  const timer = setInterval(()=>{
+    t--;
+    c.textContent = t;
+
+    if(t <= 0){
+      clearInterval(timer);
+
+      /* Auto open WhatsApp app */
+      location.href = `whatsapp://call?phone=${WA_NUMBER}`;
+
+      /* Fallback (browser) */
+      setTimeout(()=>{
+        location.href = `https://wa.me/${WA_NUMBER}`;
+      }, 800);
     }
   },1000);
 }
 </script>
+
 </body>
 </html>
