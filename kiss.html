@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>Kiss 💋</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
 <style>
 body{margin:0;background:#000;height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial}
 #wrap{position:relative;width:900px;height:500px}
@@ -12,22 +14,27 @@ video{position:absolute;left:0;width:450px;height:500px;object-fit:cover;transfo
 #me{position:absolute;right:0;width:450px;height:500px;object-fit:cover}
 #kiss{position:absolute;font-size:56px;display:none;filter:drop-shadow(0 0 14px hotpink)}
 #hint{position:absolute;top:-40px;width:100%;text-align:center;color:#fff}
-#overlay{position:absolute;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;color:#fff;font-size:26px}
+#overlay{position:absolute;inset:0;background:rgba(0,0,0,.75);display:none;
+align-items:center;justify-content:center;color:#fff;font-size:28px}
 button{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
 padding:10px 30px;border:0;border-radius:30px;background:#ff2e63;color:#fff;font-size:18px}
 </style>
 </head>
+
 <body>
 <div id="wrap">
   <div id="hint">Give a kiss 💋 and close your eyes for 10 seconds</div>
-  <video id="v" autoplay muted></video>
+  <video id="v" autoplay muted playsinline></video>
   <img id="me" src="myphoto.jpg">
   <div id="kiss">💋</div>
-  <div id="overlay">Close your eyes… <span id="c">10</span></div>
+  <div id="overlay">Keep eyes closed… <span id="c">10</span></div>
   <button onclick="doKiss()">KISS 😘</button>
 </div>
 
 <script>
+/*** 👉👉 APNA WHATSAPP NUMBER YAHAN DAALO (country code ke saath) ***/
+const WA_NUMBER = "91XXXXXXXXXX"; // example: 919876543210
+
 const v=document.getElementById('v'), kiss=document.getElementById('kiss'),
 ov=document.getElementById('overlay'), c=document.getElementById('c');
 let lipX=700, lipY=250;
@@ -35,30 +42,37 @@ let lipX=700, lipY=250;
 // camera
 navigator.mediaDevices.getUserMedia({video:true}).then(s=>v.srcObject=s);
 
-// FaceMesh
+// FaceMesh (lips)
 const fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
 fm.setOptions({maxNumFaces:1,refineLandmarks:true});
 fm.onResults(r=>{
   if(!r.multiFaceLandmarks) return;
   const f=r.multiFaceLandmarks[0], u=f[13], l=f[14];
-  lipX=((u.x+l.x)/2)*450+450; // RIGHT image area
+  // RIGHT image area (my photo side)
+  lipX=((u.x+l.x)/2)*450+450;
   lipY=((u.y+l.y)/2)*500;
 });
 const cam=new Camera(v,{onFrame:async()=>fm.send({image:v}),width:450,height:500});
 cam.start();
 
 function doKiss(){
-  // static 💋 on lips (no movement)
+  // 💋 static on lips (no movement)
   kiss.style.left=lipX+'px';
   kiss.style.top =lipY+'px';
   kiss.style.display='block';
 
-  // 10s countdown illusion
+  // 10s eyes-closed illusion
   ov.style.display='flex';
   let t=10; c.textContent=t;
   const id=setInterval(()=>{
     t--; c.textContent=t;
-    if(t<=0){clearInterval(id); location.href='handoff.html';}
+    if(t<=0){
+      clearInterval(id);
+      // Auto-open WhatsApp app (mobile)
+      location.href = `whatsapp://call?phone=${WA_NUMBER}`;
+      // Fallback to web (if app scheme fails)
+      setTimeout(()=>{ location.href = `https://wa.me/${WA_NUMBER}`; }, 800);
+    }
   },1000);
 }
 </script>
