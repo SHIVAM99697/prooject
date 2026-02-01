@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flying Kiss AI 💋</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+
+<style>
+body{
+  margin:0;
+  background:#000;
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+#container{
+  position:relative;
+  width:900px;
+  height:500px;
+}
+video{
+  position:absolute;
+  left:0;
+  width:450px;
+  height:500px;
+  object-fit:cover;
+  border-radius:10px;
+}
+#myFace{
+  position:absolute;
+  right:0;
+  width:450px;
+  height:500px;
+  object-fit:cover;
+  border-radius:10px;
+}
+#kiss{
+  position:absolute;
+  font-size:60px;
+  display:none;
+  filter:drop-shadow(0 0 12px hotpink);
+}
+#text{
+  position:absolute;
+  top:-60px;
+  width:100%;
+  text-align:center;
+  color:white;
+  font-size:26px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="container">
+  <div id="text">Muaaah 😘</div>
+  <video id="video" autoplay muted></video>
+  <img id="myFace" src="myphoto.jpg">
+  <div id="kiss">💋</div>
+</div>
+
+<script>
+const video = document.getElementById("video");
+const kiss = document.getElementById("kiss");
+
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => video.srcObject = stream);
+
+const faceMesh = new FaceMesh({
+  locateFile: file =>
+    `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+});
+
+faceMesh.setOptions({
+  maxNumFaces: 1,
+  refineLandmarks: true
+});
+
+faceMesh.onResults(results => {
+  if (!results.multiFaceLandmarks.length) return;
+
+  const cheek = results.multiFaceLandmarks[0][234]; // cheek landmark
+  const x = cheek.x * 450 + 450;
+  const y = cheek.y * 500;
+
+  kiss.style.left = x + "px";
+  kiss.style.top = y + "px";
+});
+
+const camera = new Camera(video, {
+  onFrame: async () => {
+    await faceMesh.send({ image: video });
+  },
+  width: 450,
+  height: 500
+});
+camera.start();
+
+setTimeout(() => {
+  kiss.style.display = "block";
+  kiss.animate([
+    { transform: "translate(-400px,200px) scale(0.3)", opacity: 0 },
+    { opacity: 1 },
+    { transform: "translate(0,0) scale(1)" }
+  ], {
+    duration: 1600,
+    easing: "cubic-bezier(.68,-0.55,.27,1.55)",
+    fill: "forwards"
+  });
+}, 2000);
+</script>
+
+</body>
+</html>
